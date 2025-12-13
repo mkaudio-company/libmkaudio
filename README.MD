@@ -93,4 +93,8 @@ double output = circuit.process(inputVoltage, 2);  // probe node 2
 
 ## License
 
-TBD
+This library is dual-licensed:
+
+GPL-3.0 for open source projects
+Commercial license available for closed source usage
+For commercial licensing inquiries, contact: minjaekim@mkaudio.company
