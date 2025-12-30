@@ -72,6 +72,46 @@ void Inductor::updateState(double vA, double vB, double dt) {
 }
 
 // ==========================================
+// Switch
+// ==========================================
+void Switch::updateConductance() {
+    conductance = closed ? (1.0 / R_ON) : (1.0 / R_OFF);
+}
+
+Switch::Switch(int n1, int n2, bool initialState)
+    : Component(n1, n2), closed(initialState)
+{
+    updateConductance();
+}
+
+bool Switch::isDynamic() const { return true; }
+
+double Switch::getConductance(double dt) const { return conductance; }
+
+double Switch::getCurrentSource(double dt) const { return 0.0; }
+
+void Switch::updateState(double vA, double vB, double dt) {}
+
+void Switch::setClosed(bool state) {
+    closed = state;
+    updateConductance();
+}
+
+void Switch::setOpen(bool state) {
+    closed = !state;
+    updateConductance();
+}
+
+void Switch::toggle() {
+    closed = !closed;
+    updateConductance();
+}
+
+bool Switch::isClosed() const { return closed; }
+
+bool Switch::isOpen() const { return !closed; }
+
+// ==========================================
 // Potentiometer
 // ==========================================
 void Potentiometer::updateConductances() {
@@ -380,6 +420,13 @@ void DynamicCircuit<NumDevices, NumNodes>::addPotentiometer(std::shared_ptr<Pote
 }
 
 template <std::size_t NumDevices, std::size_t NumNodes>
+void DynamicCircuit<NumDevices, NumNodes>::addSwitch(std::shared_ptr<Switch> s) {
+    if (currentSwitches < static_cast<int>(NumDevices)) {
+        switches[currentSwitches++] = s;
+    }
+}
+
+template <std::size_t NumDevices, std::size_t NumNodes>
 void DynamicCircuit<NumDevices, NumNodes>::setSourceImpedance(double impedance) {
     sourceImpedance = impedance;
 }
@@ -404,16 +451,25 @@ double DynamicCircuit<NumDevices, NumNodes>::process(double inputVoltage, int pr
         }
     }
 
-    // 4. Add source impedance at node 1
+    // 4. Stamp all switches (dynamic) - switches are simple 2-terminal components
+    for (int i = 0; i < currentSwitches; ++i) {
+        if (switches[i]) {
+            // Switches can be stamped like regular components since they're 2-terminal
+            std::shared_ptr<Component> switchComp = switches[i];
+            stampComponent(switchComp);
+        }
+    }
+
+    // 5. Add source impedance at node 1
     double G_source = 1.0 / sourceImpedance;
     if (NumNodes >= 1) {
         Y_work[0] += G_source;
     }
 
-    // 5. Add input current source (Norton equivalent)
+    // 6. Add input current source (Norton equivalent)
     J[0] += inputVoltage * G_source;
 
-    // 6. Accumulate dynamic currents from reactive components
+    // 7. Accumulate dynamic currents from reactive components
     for (int i = 0; i < currentDevices; ++i) {
         auto& comp = components[i];
         if (!comp) continue;
@@ -428,10 +484,10 @@ double DynamicCircuit<NumDevices, NumNodes>::process(double inputVoltage, int pr
         if (n2 > 0) J[n2 - 1] += Is;
     }
 
-    // 7. Solve linear system
+    // 8. Solve linear system
     solveLinearSystem(NumNodes);
 
-    // 8. Update component states
+    // 9. Update component states
     for (int i = 0; i < currentDevices; ++i) {
         auto& comp = components[i];
         if (!comp) continue;
@@ -453,6 +509,14 @@ template <std::size_t NumDevices, std::size_t NumNodes>
 std::shared_ptr<Potentiometer> DynamicCircuit<NumDevices, NumNodes>::getPotentiometer(int index) {
     if (index >= 0 && index < currentPots) {
         return potentiometers[index];
+    }
+    return nullptr;
+}
+
+template <std::size_t NumDevices, std::size_t NumNodes>
+std::shared_ptr<Switch> DynamicCircuit<NumDevices, NumNodes>::getSwitch(int index) {
+    if (index >= 0 && index < currentSwitches) {
+        return switches[index];
     }
     return nullptr;
 }

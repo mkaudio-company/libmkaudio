@@ -73,6 +73,44 @@ public:
 };
 
 // ==========================================
+// Switch Class (2-way SPST Switch)
+// ==========================================
+// A switch is modeled as a variable resistor:
+// - Closed (on): Very low resistance (R_ON, typically 0.1 ohm)
+// - Open (off): Very high resistance (R_OFF, typically 10M ohm)
+//
+// This is a Single-Pole Single-Throw (SPST) switch.
+// For SPDT (Single-Pole Double-Throw), use two Switch instances.
+class Switch : public Component {
+private:
+    bool closed;
+    double conductance;
+
+    static constexpr double R_ON = 0.1;        // 0.1 ohm when closed
+    static constexpr double R_OFF = 50000000.0; // 50M ohm when open
+
+    void updateConductance();
+
+public:
+    Switch(int n1, int n2, bool initialState = false);
+
+    // This component is dynamic (state changes with switch position)
+    bool isDynamic() const override;
+
+    double getConductance(double dt) const override;
+    double getCurrentSource(double dt) const override;
+    void updateState(double vA, double vB, double dt) override;
+
+    // Set switch state
+    void setClosed(bool state);
+    void setOpen(bool state);
+    void toggle();
+
+    bool isClosed() const;
+    bool isOpen() const;
+};
+
+// ==========================================
 // Potentiometer Class
 // ==========================================
 // A potentiometer is modeled as two resistors in series:
@@ -173,6 +211,7 @@ class DynamicCircuit {
 private:
     std::array<std::shared_ptr<Component>, NumDevices> components{};
     std::array<std::shared_ptr<Potentiometer>, NumDevices> potentiometers{}; // Track pots separately
+    std::array<std::shared_ptr<Switch>, NumDevices> switches{};              // Track switches separately
 
     std::array<double, NumNodes * NumNodes> Y_work{};
     std::array<double, NumNodes> J{};
@@ -180,6 +219,7 @@ private:
 
     int currentDevices = 0;
     int currentPots = 0;
+    int currentSwitches = 0;
     double dt;
     double sourceImpedance = 10.0;
 
@@ -192,12 +232,16 @@ public:
 
     void addComponent(std::shared_ptr<Component> c);
     void addPotentiometer(std::shared_ptr<Potentiometer> p);
+    void addSwitch(std::shared_ptr<Switch> s);
     void setSourceImpedance(double impedance);
 
     double process(double inputVoltage, int probeNode);
 
     // Get a potentiometer by index for real-time adjustment
     std::shared_ptr<Potentiometer> getPotentiometer(int index);
+
+    // Get a switch by index for real-time adjustment
+    std::shared_ptr<Switch> getSwitch(int index);
 };
 
 } // namespace MKAudio
