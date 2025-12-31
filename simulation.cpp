@@ -526,8 +526,13 @@ std::shared_ptr<Switch> DynamicCircuit<NumDevices, NumNodes>::getSwitch(int inde
 // ==========================================
 // Circuit types used in the project
 template class Circuit<3, 2>;   // Power amp circuit
+template class Circuit<5, 4>;   // Clean attenuator
+template class Circuit<5, 5>;   // EQ attenuator
+template class Circuit<6, 4>;   // Lead shaper
 
 // DynamicCircuit types used in the project
-template class DynamicCircuit<10, 5>;  // Fender tone stack
+template class DynamicCircuit<4, 5>;   // Boost circuit
+template class DynamicCircuit<10, 5>;  // Fender tone stack (legacy)
+template class DynamicCircuit<10, 10>; // Fender tone stack
 
 } // namespace MKAudio

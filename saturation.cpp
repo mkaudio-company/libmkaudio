@@ -28,7 +28,7 @@ Saturation::Saturation(double alphaPlus, double alphaMinus,
     normFactorMinus = 1.0 / std::log2(1.0 + driveAlphaMinus);
 }
 
-inline double Saturation::process(double inputSample)
+double Saturation::process(double inputSample)
 {
     
     double outputValue;

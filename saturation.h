@@ -25,7 +25,7 @@ public:
                double deltaBias, bool flip);
 
     // The Final Core Asymmetrical, Biased "Numeric Modeling" Algorithm
-    inline double process(double inputSample);
+    double process(double inputSample);
 };
 
 } // namespace MKAudio
