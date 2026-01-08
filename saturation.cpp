@@ -49,6 +49,7 @@ double Saturation::process(double inputSample)
         // Output must be negative before final flip
         outputValue = -1.0 * compressionBetaMinus * (logOut * normFactorMinus);
     }
+    outputValue += biasDelta;
     
     // 2. Apply Boolean Polarity Flip (γ)
     if (flipPolarity) return -outputValue;
